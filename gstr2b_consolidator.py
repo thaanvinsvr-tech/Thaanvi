@@ -118,6 +118,19 @@ def extract_sheet(ws):
                 break
         headers.append(val or f"Column {get_column_letter(c)}")
 
+    # de-duplicate header names (pandas/Excel both choke on repeats) by
+    # suffixing repeats with (2), (3), ...
+    seen = {}
+    unique_headers = []
+    for h in headers:
+        if h not in seen:
+            seen[h] = 1
+            unique_headers.append(h)
+        else:
+            seen[h] += 1
+            unique_headers.append(f"{h} ({seen[h]})")
+    headers = unique_headers
+
     data_rows = []
     for r in range(header_end + 1, ws.max_row + 1):
         row_vals = [ws.cell(row=r, column=c).value for c in range(1, max_col + 1)]
