@@ -25,6 +25,92 @@ st.set_page_config(page_title="GST Compliance Suite", page_icon="\U0001F4CA", la
 
 
 # ==========================================================================
+# Theme (nude palette, light/dark toggle) + cursor mascot
+# ==========================================================================
+
+NUDE_LIGHT = {
+    "bg": "#FBF3EA", "sidebar_bg": "#F1E1D0", "card_bg": "#FFFFFF",
+    "text": "#4A372C", "accent": "#C99A76", "accent_text": "#FFFFFF",
+    "border": "#E3CBB2",
+}
+NUDE_DARK = {
+    "bg": "#2B2420", "sidebar_bg": "#3A2F28", "card_bg": "#3E332C",
+    "text": "#F3E6D8", "accent": "#C99A76", "accent_text": "#2B2420",
+    "border": "#54453B",
+}
+
+
+def inject_theme(mode):
+    p = NUDE_DARK if mode == "Dark" else NUDE_LIGHT
+    st.markdown(f"""
+    <style>
+    .stApp {{ background-color: {p['bg']}; }}
+    .stApp, .stApp p, .stApp label, .stApp span, .stApp div,
+    h1, h2, h3, h4, h5, h6 {{ color: {p['text']}; }}
+    section[data-testid="stSidebar"] {{ background-color: {p['sidebar_bg']}; }}
+    section[data-testid="stSidebar"] * {{ color: {p['text']} !important; }}
+    .stButton>button, .stDownloadButton>button {{
+        background-color: {p['accent']}; color: {p['accent_text']};
+        border-radius: 10px; border: 1px solid {p['border']}; font-weight: 600;
+    }}
+    .stButton>button:hover, .stDownloadButton>button:hover {{
+        opacity: 0.85; border-color: {p['accent']};
+    }}
+    div[data-testid="stMetric"] {{
+        background-color: {p['card_bg']}; padding: 14px; border-radius: 12px;
+        border: 1px solid {p['border']};
+    }}
+    div[data-testid="stFileUploaderDropzone"] {{
+        background-color: {p['card_bg']}; border: 1.5px dashed {p['accent']};
+        border-radius: 12px;
+    }}
+    .stTabs [data-baseweb="tab"] {{ color: {p['text']}; }}
+    .stTabs [aria-selected="true"] {{
+        color: {p['accent']} !important; border-bottom-color: {p['accent']} !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def inject_cursor_pet():
+    st.iframe("""
+    <script>
+    (function() {
+        try {
+            const doc = window.parent.document;
+            if (doc.getElementById('cursor-pet-poodle')) { return; }
+            const pet = doc.createElement('div');
+            pet.id = 'cursor-pet-poodle';
+            pet.innerText = '\U0001F429';
+            pet.style.position = 'fixed';
+            pet.style.fontSize = '30px';
+            pet.style.pointerEvents = 'none';
+            pet.style.zIndex = '2147483647';
+            pet.style.transition = 'left 0.5s ease-out, top 0.5s ease-out';
+            pet.style.left = '-100px';
+            pet.style.top = '-100px';
+            pet.style.filter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))';
+            doc.body.appendChild(pet);
+            doc.addEventListener('mousemove', function(e) {
+                pet.style.left = (e.clientX + 14) + 'px';
+                pet.style.top = (e.clientY + 14) + 'px';
+            });
+        } catch (err) {
+            // silently do nothing if the parent frame can't be reached
+        }
+    })();
+    </script>
+    """, height=1)
+
+
+theme_mode = st.session_state.get("theme_mode_radio", "Light")
+show_pet = st.session_state.get("show_pet_checkbox", True)
+inject_theme(theme_mode)
+if show_pet:
+    inject_cursor_pet()
+
+
+# ==========================================================================
 # Shared helpers
 # ==========================================================================
 
@@ -334,17 +420,27 @@ def render_pdf2excel():
         st.info("Upload one or more PDF files to get started.")
         return
 
-    merge = st.checkbox(
-        "Merge multiple tables on the same page into one sheet",
-        value=False, key="pdf2excel_merge",
-        help="Off (default): each detected table gets its own sheet. On: tables sharing a page are stacked into one sheet, separated by a blank row.",
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        merge_across = st.checkbox(
+            "Merge multi-page tables into one sheet",
+            value=True, key="pdf2excel_merge_across",
+            help="On (default): consecutive tables with the same column count (e.g. a bank statement or ledger spanning many pages) are combined into a single sheet, with any repeated header row stripped. Off: every table gets its own per-page sheet.",
+        )
+    with col2:
+        merge_per_page = st.checkbox(
+            "Merge multiple tables on the same page",
+            value=False, key="pdf2excel_merge_per_page",
+            help="On: if a single page has more than one detected table, stack them into one sheet separated by a blank row. Off (default): each gets its own sheet.",
+        )
 
     with st.spinner("Extracting tables..."):
         all_file_sheets = []
         total_tables = 0
         for uf in uploaded_files:
-            sheets = pdf2excel.extract_pdf_to_sheets(uf.getvalue(), merge_tables_per_page=merge)
+            sheets = pdf2excel.extract_pdf_to_sheets(
+                uf.getvalue(), merge_tables_per_page=merge_per_page, merge_across_pages=merge_across,
+            )
             all_file_sheets.append((uf.name, sheets))
             total_tables += len(sheets)
 
@@ -495,6 +591,10 @@ tool = st.sidebar.radio(
 )
 st.sidebar.markdown("---")
 st.sidebar.caption("More tools coming soon.")
+
+st.sidebar.markdown("### Appearance")
+st.sidebar.radio("Theme", ["Light", "Dark"], horizontal=True, key="theme_mode_radio")
+st.sidebar.checkbox("\U0001F429 Puppy follows your cursor", value=True, key="show_pet_checkbox")
 
 RENDERERS = {
     "GSTR-2B Consolidator": render_gstr2b,
