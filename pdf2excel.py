@@ -27,6 +27,15 @@ def safe_sheet_name(name):
     return name.translate(INVALID_SHEET_CHARS)[:31]
 
 
+def _clean_table(table):
+    """
+    pdfplumber can return None for an entire row (not just individual
+    cells) when it can't cleanly detect one — normalise those to an empty
+    list so every row is always iterable downstream.
+    """
+    return [(row if row is not None else []) for row in table]
+
+
 def _raw_extract(file_bytes):
     """
     Returns an ordered list of items, one per page:
@@ -38,6 +47,7 @@ def _raw_extract(file_bytes):
         for page_num, page in enumerate(pdf.pages, start=1):
             tables = page.extract_tables()
             if tables:
+                tables = [_clean_table(t) for t in tables]
                 items.append({"page": page_num, "tables": tables})
             else:
                 text = page.extract_text() or ""
