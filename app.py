@@ -875,4 +875,4 @@ elif nav["level"] == "tool":
     if st.button(f"\u2190 Back to {cat['name']}", key="tool_back_button"):
         st.session_state.nav = {"level": "category", "category": nav["category"]}
         st.rerun()
-    TOOL_RENDER_MAP[nav["tool"]](
+    TOOL_RENDER_MAP[nav["tool"]]()
