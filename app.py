@@ -798,7 +798,7 @@ def render_category(category_key):
                 st.caption(tool["desc"])
                 if tool["implemented"]:
                     if st.button("Open Tool", key=f"opentool_{tool['key']}", width='stretch'):
-                        st.session_state.nav = {"level": "tool", "category": category_key, "tool" tool["key"]}
+                        st.session_state.nav = {"level": "tool", "category": category_key, "tool": tool["key"]}
                         st.rerun()
                 else:
                     st.button("Coming Soon", key=f"soontool_{tool['key']}", width='stretch', disabled=True)
