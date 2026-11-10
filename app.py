@@ -52,6 +52,8 @@ def inject_theme(mode):
     st.markdown(f"""
     <style>
     .stApp {{ background-color: {c['bg']}; }}
+    header[data-testid="stHeader"] {{ background-color: {c['bg']}; }}
+    header[data-testid="stHeader"] * {{ color: {c['text']} !important; }}
     .stApp, .stApp p, .stApp span, .stApp div, .stApp label {{ color: {c['text']}; }}
     h1, h2, h3, h4, h5, h6 {{ color: {c['text']} !important; }}
 
@@ -86,11 +88,33 @@ def inject_theme(mode):
     div[data-testid="stAppViewContainer"] .stButton>button:hover,
     div[data-testid="stAppViewContainer"] .stDownloadButton>button:hover {{ opacity: 0.9; }}
     div[data-testid="stAppViewContainer"] .stButton>button[kind="secondary"] {{
-        background-color: {c['card_bg']}; color: {NAVY}; border: 1px solid {c['border']};
+        background-color: {c['card_bg']}; color: {c['text']}; border: 1px solid {c['border']};
     }}
+    div[data-testid="stAppViewContainer"] .stButton>button[kind="secondary"] * {{ color: {c['text']} !important; }}
     div[data-testid="stAppViewContainer"] .stButton>button:disabled {{
         background-color: {c['bg']}; color: {c['muted']} !important;
         border: 1px dashed {c['border']}; opacity: 0.85;
+    }}
+
+    /* sidebar buttons — must come AFTER the main-area button rules above, because the
+       sidebar sits inside stAppViewContainer and would otherwise inherit white buttons */
+    section[data-testid="stSidebar"] .stButton>button,
+    section[data-testid="stSidebar"] .stButton>button[kind="secondary"] {{
+        background-color: transparent !important; border: 1px solid transparent !important;
+        color: #FFFFFF !important;
+    }}
+    section[data-testid="stSidebar"] .stButton>button[kind] * {{ color: #FFFFFF !important; }}
+    section[data-testid="stSidebar"] .stButton>button:hover {{
+        background-color: {NAVY_SOFT} !important; border-color: {NAVY_SOFT} !important;
+    }}
+    section[data-testid="stSidebar"] .stButton>button[kind="primary"] {{
+        background-color: {TEAL} !important; border-color: {TEAL} !important;
+    }}
+    section[data-testid="stSidebar"] .stButton>button[kind]:disabled {{
+        background-color: transparent !important; opacity: 1 !important; cursor: not-allowed;
+    }}
+    section[data-testid="stSidebar"] .stButton>button[kind]:disabled * {{
+        color: #A9BCCE !important; opacity: 1 !important; font-style: italic;
     }}
 
     div[data-testid="stMetric"] {{
